@@ -1,0 +1,166 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Wix xmlns="http://schemas.microsoft.com/wix/2006/wi">
+	<Product Id="*" 
+            Name="Finder of Files" 
+            Language="1033" 
+            Version="1.1.137.0" 
+            Manufacturer="BobbleSoft" 
+            UpgradeCode="98fec8c5-cec3-4bf1-b292-645f0323e522">
+    
+		<Package InstallerVersion="200" 
+             Compressed="yes" 
+             InstallScope="perMachine" 
+             Manufacturer="BobbleSoft" 
+             Description="Installs the Finder of Files application."
+             Comments="This was built by Kevin D. Sandal" />
+
+		<MajorUpgrade 
+        DowngradeErrorMessage="A newer version of [ProductName] is already installed. Uninstall the old one first.4" />
+    
+    <!-- Push all the files into a single .MSI -->
+		<MediaTemplate EmbedCab="yes" />
+    
+    <!-- Set the license text to be displayed before installation -->
+    <WixVariable Id="WixUILicenseRtf" Value="$(var.FinderOfFiles.ProjectDir)EULA.rtf" />
+    
+    <!-- Set the icon to be used in "Programs and Features" -->
+    <Icon Id="AppIcon" SourceFile="$(var.FinderOfFiles.ProjectDir)FoF.ico" />
+    <Property Id="ARPPRODUCTICON" Value="AppIcon" />
+    
+    <!-- Check the .NET Framework 4.5.2 or higher is installed -->
+<!--
+    <PropertyRef Id="NETFRAMEWORK45" />
+    <Condition Message="[ProductName] requires the the .NET Framework 4.5.2 be installed." >
+      <![CDATA[Installed OR NETFRAMEWORK45 >= "#379893"]]>
+    </Condition>
+-->
+    
+    <Condition Message="You need to be an administrator to install [ProductName].">
+      Privileged
+    </Condition>
+
+    <Condition Message='Windows 7 or later is required for [ProductName].'>
+      VersionNT >= 601
+    </Condition>
+    
+		<Feature Id="ProductFeature" Title="Finder of Files" Level="1">
+			<ComponentGroupRef Id="MyProductComponents" />
+		</Feature>
+
+    <Property Id="ARPHELPLINK"      Value="https://github.com/BobbleSoft/FinderOfFiles/issues" />
+    <Property Id="ARPURLINFOABOUT"  Value="https://github.com/BobbleSoft/FinderOfFiles/wiki" />
+    <Property Id="ARPURLUPDATEINFO" Value="https://github.com/BobbleSoft/FinderOfFiles/releases/latest" />
+
+    <!--
+    WixUI_Minimal
+    WixUI_Advanced
+    WixUI_FeatureTree
+    WixUI_InstallDir
+    WixUI_Mondo
+    -->
+    <UIRef Id="WixUI_Minimal"/>
+	</Product>
+
+	<Fragment>
+		<Directory Id="TARGETDIR" Name="SourceDir">
+      <Directory Id="ProgramFilesFolder">
+        <Directory Id="ManufacturerFolder" Name="!(bind.property.Manufacturer)" >
+          <Directory Id="INSTALLFOLDER" Name="!(bind.property.ProductName)" />
+        </Directory>
+      </Directory>
+
+      <!-- Start Menu Folder -->
+<!-- ICE64 error 
+      <Directory Id="ProgramMenuFolder">
+        <Directory Id="ApplicationProgramsFolder" Name="!(bind.property.ProductName)"/>
+      </Directory>
+-->
+      
+<!-- 
+http://robmensching.com/blog/posts/2007/4/27/how-to-create-an-uninstall-shortcut-and-pass-all-the/
+https://stackoverflow.com/questions/471424/wix-tricks-and-tips?rq=1
+-->
+      
+      <!-- Add this folder to define the Desktop folder. -->
+      <!-- This will be used to define the Desktop shortcut. -->
+      <Directory Id="DesktopFolder" Name="Desktop" />
+    </Directory>
+  </Fragment>
+
+	<Fragment>
+    <ComponentGroup Id="MyProductComponents" Directory="INSTALLFOLDER">
+      <Component Id="cmp_EULA.rtf" Guid="0521970c-0e1e-462c-97bb-46776927faf2">
+        <File Id="file_EULA.rtf" 
+              Name="EULA.rtf" 
+              Source="$(var.SolutionDir)\FinderOfFiles\EULA.rtf" 
+              KeyPath="no" />
+      </Component>
+      
+      <Component Id="cmp_FoF.ico" Guid="a777c1b5-e5f6-42f4-b8c3-0f5906e4d80d">
+        <File Id="file_FoF.ico" 
+              Name="FoF.ico" 
+              Source="$(var.SolutionDir)\FinderOfFiles\FoF.ico" 
+              KeyPath="no" />
+      </Component>
+      
+      <Component Id="cmp_FinderOfFiles.exe" Guid="abb8aea0-148f-43f6-ae50-d36c929aad41">
+        <File Id="file_FinderOfFiles.exe" 
+              Name="FinderOfFiles.exe" 
+              Source="$(var.FinderOfFiles.TargetDir)FinderOfFiles.exe"
+              Checksum="yes"
+              KeyPath="yes" />
+      </Component>
+      
+      <Component Id="cmp_FinderOfFiles.exe.config" Guid="0fc840c4-8f2c-4cd0-a370-49b7235f5915">
+        <File Id="file_FinderOfFiles.exe.config" 
+              Name="FinderOfFiles.exe.config" 
+              Source="$(var.FinderOfFiles.TargetDir)FinderOfFiles.exe.config" 
+              KeyPath="no" />
+      </Component>
+    </ComponentGroup>   
+  </Fragment>
+
+  <!-- Define Start Menu folder objects. -->
+  <Fragment>
+    <Component Id="ApplicationShortcuts" Directory="ApplicationProgramsFolder" Guid="e7534a3f-fe1c-4a10-a04c-955a674c8c10" >
+      <Shortcut Id="ApplicationShortcut"
+                Name="!(bind.property.ProductName)"
+                Description="Starts !(bind.property.ProductName)"
+                Target="[INSTALLFOLDER]\FinderOfFiles.exe"
+                WorkingDirectory="INSTALLFOLDER"
+                Icon="MyShortcutIcon" />
+        
+      <RemoveFolder Id="ApplicationProgramsFolder"
+                    On="uninstall" />
+        
+      <RegistryValue Root="HKLM"
+                     Key="Software\!(bind.properyt.Manufacturer)\!(bind.property.ProductName)"
+                     Name="ApplicationShortcutsInstalled"
+                     Type="integer"
+                     Value="1"
+                     KeyPath="yes" />
+
+      <RegistryValue Root="HKLM"
+                     Key="Software\!(bind.properyt.Manufacturer)\!(bind.property.ProductName)"
+                     Name="Version"
+                     Type="string"
+                     Value="[ProductVersion]"
+                     KeyPath="no" />
+    </Component>
+  </Fragment>
+
+  <!-- Define Desktop shortcut objects. -->
+  <Fragment>
+    <DirectoryRef Id="DesktopFolder" >
+      <Component Id="ApplicationDesktopShortcut" Guid="222b94f2-0126-4779-af83-83d36fbaf1a7" >
+        <Shortcut Id="MyDesktopShortcut"
+                      Name="!(bind.property.ProductName)"
+                      Description="Finding Files (Reasonably) Fast"
+                      Directory="DesktopFolder"
+                      Target="[INSTALLFOLDER]FinderOfFiles.exe"
+                      WorkingDirectory="INSTALLFOLDER"
+                      Icon="MyShortcutIcon" />
+      </Component>
+    </DirectoryRef>
+  </Fragment>
+</Wix>
